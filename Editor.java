@@ -14,6 +14,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.Image;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -40,6 +41,7 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
+import javax.swing.ImageIcon;
 import javax.swing.text.BadLocationException;
 
 class Editor implements ActionListener {
@@ -177,7 +179,8 @@ class Editor implements ActionListener {
 		m.add(help);
 		//
 		tp.setMargin(new Insets(10,10,0,0));
-		
+		Image image;
+		f.setIconImage(new ImageIcon("icon.png").getImage());
 		f.setJMenuBar(m);
 		f.add(scrollPane);
 		f.setTitle("Editor");
