@@ -1,6 +1,6 @@
-
-
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GraphicsEnvironment;
@@ -12,6 +12,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -40,7 +42,7 @@ import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 import javax.swing.text.BadLocationException;
 
-public class Editor implements ActionListener,KeyListener {
+public class Editor implements ActionListener {
 	JFrame f;
 	JTextPane tp ;
 	JMenuBar m,m2;
@@ -50,31 +52,39 @@ public class Editor implements ActionListener,KeyListener {
 	FileWriter fo;
 	JMenu file,edit,run,help;
 	JMenuItem new1,open,save,saveas,exit;
-	JMenuItem cut,copy,paste,selectall;
-	JMenuItem compile,run1,compileAndRun;
+	JMenuItem cut,copy,paste,selectall,openReadMe;
+	JMenuItem compile,run1,compileAndRun,cmdopen;
 	JComboBox tf,cfont;
 	String copyData,tsize="";
 	Editor(){
 		f = new JFrame();
-		JEditorPane ep =new JEditorPane();
 		tp = new JTextPane();
+		tp.setText("C ,C++ and  Java Files are  Compiled and Run \n And there is option to open cmd also!! \n");
+		tp.setBackground(Color.BLACK);
+		tp.setForeground(Color.WHITE);
+		tp.setCaretColor(Color.white);
+		
 		//setsize
 			tf=new JComboBox();
-			for(int i=14;i<30;i++)
+			for(int i=14;i<50;i++)
 				tf.addItem(i+"");
+			tf.setSelectedItem("20");
+			
 			tf.setMaximumSize(new Dimension(40,20));
 			tf.addActionListener(this);
+			tf.setToolTipText("Text Size");
 			cfont=new JComboBox();
 			String fonts[] = 
 				      GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
 
 				    for ( int i = 0; i < fonts.length; i++ )
 				    {
-				     cfont.addItem(fonts[i]);
+				    	cfont.addItem(fonts[i]);
 				    }
 			cfont.setMaximumSize(new Dimension(150,20));
 			cfont.addActionListener(this);
-		
+			cfont.setSelectedItem("Arial");
+			cfont.setToolTipText("Text font");
 		JPanel noWrapPanel = new JPanel( new BorderLayout() );
 		noWrapPanel.add( tp );
 		JScrollPane scrollPane = new JScrollPane( noWrapPanel );
@@ -100,8 +110,10 @@ public class Editor implements ActionListener,KeyListener {
 			save.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,ActionEvent.CTRL_MASK));
 			save.addActionListener(this);
 			saveas =new JMenuItem("Save As ");
-			saveas.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F12,0));
+			saveas.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,ActionEvent.CTRL_MASK + ActionEvent.ALT_MASK));
+			saveas.addActionListener(this);
 			exit =new JMenuItem("Exit    ");
+			exit.addActionListener(this);
 			
 			
 		
@@ -131,9 +143,14 @@ public class Editor implements ActionListener,KeyListener {
 			compile.addActionListener(this);
 			compileAndRun = new JMenuItem("Compile and Run");
 			compileAndRun.addActionListener(this);
+			cmdopen = new JMenuItem("Open CMD");
+			cmdopen.addActionListener(this);
 		
 		help= new JMenu("Help");
 		help.setMnemonic(KeyEvent.VK_H);
+		help.setToolTipText("Help Menu");
+			openReadMe = new JMenuItem("Open ReadME file");
+			
 		//adding MenuItems
 			file.add(new1);
 			file.add(open);
@@ -148,7 +165,8 @@ public class Editor implements ActionListener,KeyListener {
 			edit.add(paste);
 			run.add(run1);
 			run.add(compile);
-			run.add(compileAndRun);
+//			run.add(compileAndRun);
+			run.add(cmdopen);
 		//---------
 		
 		m.add(file);
@@ -168,8 +186,23 @@ public class Editor implements ActionListener,KeyListener {
 		f.setSize(600, 400);
 		f.setLocation(200, 100);
 		UIManager.getDefaults().put("Button.showMnemonics", Boolean.TRUE);
+		f.addWindowFocusListener(new WindowAdapter() {
+		    public void windowGainedFocus(WindowEvent e) {
+		        tp.requestFocusInWindow();
+		    }
+		});
 	}
-	void savecurrentnote(int retval){
+	void openCmd()
+	{
+		try {
+			Process p= Runtime.getRuntime().exec("cmd /c start cmd.exe /k");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	void savecurrentnote(int retval)
+	{
 		if(retval==JFileChooser.APPROVE_OPTION)
 		{
 			fileedit=fc.getSelectedFile();
@@ -217,17 +250,46 @@ public class Editor implements ActionListener,KeyListener {
 			}
 		}
 	}
-	public void compileFile()
+	public void compileFile() 
 	{
-		String path =fc.getSelectedFile().getPath();
+		if(f.getTitle().equals("Editor"))
+		{
+			savecurrentnote(fc.showSaveDialog(f));
+		}
+		File dir=fc.getSelectedFile().getParentFile();
 		String filename=fileedit.getName();
-		String fl[]=filename.split("[.]");
+		String fl[]= new String[3];
+		fl=filename.split("[.]");
+		String pathexe=fl[0]+".exe";
+		String path=fl[0]+"."+fl[1].toLowerCase();
 		Runtime rt = Runtime.getRuntime();
-		String commands = "cmd.exe /c javac \""+path+"\"";
+		String commands = "";
+		if(fl[1].toLowerCase().equals("cpp"))
+		{
+			commands=" cmd.exe /c g++ "+path;
+			JOptionPane.showMessageDialog(f, "g++ compiler not found \n if problem persists open cmd under run option and type\n g++ filename.cpp -o filename.exe \n to compile ");
+			return;
+		}
+		else if(fl[1].toLowerCase().equals("c"))
+		{
+			commands="cmd /c gcc.exe "+path+" -o "+pathexe;
+			JOptionPane.showMessageDialog(f, "gcc compiler not found \n if problem persists open cmd under run option and type\n gcc filename.c -o filename.exe \n to compile ");
+			return;
+		}
+		else if(fl[1].toLowerCase().equals("java"))
+		{
+			commands="cmd.exe /c javac "+path+"";
+		}
+		else
+		{
+			JOptionPane.showMessageDialog(f, "Can Only Compile C,C++and Java Source File");
+			return;
+		}
+		System.out.println(commands);
 		Process proc;
 		try {
-			proc = rt.exec(commands);
-			BufferedReader stdInput = new BufferedReader(new 
+				proc = rt.exec(commands,null,dir);
+				BufferedReader stdInput = new BufferedReader(new 
 				     InputStreamReader(proc.getInputStream()));
 
 				BufferedReader stdError = new BufferedReader(new 
@@ -235,36 +297,70 @@ public class Editor implements ActionListener,KeyListener {
 
 				// read the output from the command
 				System.out.println("Here is the standard output of the command:\n");
+				String strOutput="",strError="";
 				String s = null;
 				while ((s = stdInput.readLine()) != null) {
-				    System.out.println(s);
+				    strOutput=strOutput+s+"\n";
 				}
 				// read any errors from the attempted command
 				System.out.println("Here is the standard error of the command (if any):\n");
 				while ((s = stdError.readLine()) != null) {
-				    System.out.println(s);
+				    strError=strError+s+"\n";
 				}
+				if(!strError.equals(""))
+				{
+					JOptionPane.showConfirmDialog(f, "Error Message: \n"+ strError, "Compiler Message", JOptionPane.OK_OPTION, JOptionPane.INFORMATION_MESSAGE);
+				}
+				else
+				{
+					JOptionPane.showConfirmDialog(f, "Successfully Compiled \n"+strOutput, "Compiler Message", JOptionPane.OK_OPTION, JOptionPane.INFORMATION_MESSAGE);
+				}
+		            int exitVal = proc.waitFor();
+		            System.out.println("ExitValue: " + exitVal);
 
 
-		} catch (IOException e1) {
+		} catch (IOException | InterruptedException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 
 	}
 	public void runFile(){
-		String path =fc.getSelectedFile().getPath();
+		if(f.getTitle().equals("Editor"))
+		{
+			savecurrentnote(fc.showSaveDialog(f));
+			compileFile();
+		}
+		File dir=fc.getSelectedFile().getParentFile();
 		String filename=fileedit.getName();
-		String fl[]=filename.split("[.]");
-		String newPath=path.replace("\\", "\\\\");
-		String direc[]=newPath.split("\\\\");
+		String fl[]= new String[3];
+		fl=filename.split("[.]");
 		Runtime rt = Runtime.getRuntime();
-		String commands = "cmd.exe /c "+direc[0]+" /c cd \""+fileedit.getParent()+"\" /c java "+fl[0];
+		String commands = "";
+		if(fl[1].toLowerCase().equals("cpp"))
+		{
+			commands=" cmd.exe /c "+fl[0]+".exe" ;
+//			JOptionPane.showMessageDialog(f, "g++ compiler not found \n if problem persists open cmd under run option and type\n g++ filename.cpp -o filename.exe \n to compile ");
+		}
+		else if(fl[1].toLowerCase().equals("c"))
+		{
+			commands=" cmd.exe /c "+fl[0]+".exe" ;
+//			JOptionPane.showMessageDialog(f, "gcc compiler not found \n if problem persists open cmd under run option and type\n gcc filename.c -o filename.exe \n to compile ");
+		}
+		else if(fl[1].toLowerCase().equals("java"))
+		{
+			commands="cmd.exe /c java "+fl[0];
+		}
+		else
+		{
+			JOptionPane.showMessageDialog(f, "Can Only Compile C,C++and Java Source File");
+			return;
+		}
 		System.out.println(commands);
 		Process proc;
 		try {
-			proc = rt.exec(commands);
-			BufferedReader stdInput = new BufferedReader(new 
+				proc = rt.exec(commands,null,dir);
+				BufferedReader stdInput = new BufferedReader(new 
 				     InputStreamReader(proc.getInputStream()));
 
 				BufferedReader stdError = new BufferedReader(new 
@@ -272,18 +368,29 @@ public class Editor implements ActionListener,KeyListener {
 
 				// read the output from the command
 				System.out.println("Here is the standard output of the command:\n");
+				String strOutput="",strError="";
 				String s = null;
 				while ((s = stdInput.readLine()) != null) {
-				    System.out.println(s);
+				    strOutput=strOutput+s+"\n";
 				}
 				// read any errors from the attempted command
 				System.out.println("Here is the standard error of the command (if any):\n");
 				while ((s = stdError.readLine()) != null) {
-				    System.out.println(s);
+				    strError=strError+s+"\n";
 				}
+				if(!strError.equals(""))
+				{
+					JOptionPane.showConfirmDialog(f, "Error Message: \n"+ strError, "Compiler Message", JOptionPane.OK_OPTION, JOptionPane.INFORMATION_MESSAGE);
+				}
+				else
+				{
+					JOptionPane.showConfirmDialog(f, "Successfully Compiled \n"+strOutput, "Compiler Message", JOptionPane.OK_OPTION, JOptionPane.INFORMATION_MESSAGE);
+				}
+		            int exitVal = proc.waitFor();
+		            System.out.println("ExitValue: " + exitVal);
 
 
-		} catch (IOException e1) {
+		} catch (IOException | InterruptedException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
@@ -302,7 +409,6 @@ public class Editor implements ActionListener,KeyListener {
 			int re=0;
 			re=fc.showOpenDialog(f);
 			openFileSelected(re);
-			tp.setText(tp.getText()+"Open gets Clicked");
 			System.out.println("Open Clicked");
 		}
 		else if(e.getSource()==save)
@@ -343,12 +449,10 @@ public class Editor implements ActionListener,KeyListener {
 		else if(e.getSource()==selectall)
 		{
 			tp.selectAll();
-			System.out.println("selectall as Clicked");
 		}
 		else if(e.getSource()==compile)
 		{
 			compileFile();
-			JOptionPane.showMessageDialog(f, "file Compiled");
 		}
 		else if(e.getSource()==run1)
 		{
@@ -373,31 +477,32 @@ public class Editor implements ActionListener,KeyListener {
 	        } catch (IOException io) {  
 	            io.printStackTrace();  
 	        }  
-			JOptionPane.showMessageDialog(f, "file Compiled and Run");
+		}
+		else if(e.getSource()==cmdopen)
+		{
+			openCmd();
+			JOptionPane.showMessageDialog(f, "Open CMd");
+
 		}
 		else if(e.getSource()==tf ||e.getSource()==cfont)
 		{
 			tp.setFont(new Font(cfont.getSelectedItem()+"",Font.BOLD,(int)Integer.parseInt((String) tf.getSelectedItem())));
 		}
+		else if(e.getSource()==openReadMe)
+		{
+			f.setTitle("Editor");
+			String text="For Problem Regarding Compiler\n try CMD an try to compile file as";
+			text=text+"\n for C   :gcc filename.c -o filename.exe\nto compile and filename.exe to run";
+			text=text+"\n for C++ :g++ filename.cpp -o filename.exe\nto compile and filename.exe to run";
+			text=text+"\n for Java:javac filename.java\n\n and java filename <-to run\n file name should be same as Class naem";
+			
+			
+			tp.setText("For Problem Regarding Compiler\n");
+		}
 	}
 	public static void main(String[] args) {
 		new Editor();
 
-	}
-	@Override
-	public void keyTyped(KeyEvent e) {
-		
-		
-	}
-	@Override
-	public void keyPressed(KeyEvent e) {
-		
-		
-	}
-	@Override
-	public void keyReleased(KeyEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 
 }
