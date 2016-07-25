@@ -42,7 +42,7 @@ import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 import javax.swing.text.BadLocationException;
 
-public class Editor implements ActionListener {
+class Editor implements ActionListener {
 	JFrame f;
 	JTextPane tp ;
 	JMenuBar m,m2;
